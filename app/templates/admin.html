@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+
+{% block title %}Class administration &middot; {{ site_name }}{% endblock %}
+
+{% block content %}
+<div data-admin-page>
+  <section class="page-hero">
+    <p class="eyebrow">Staff workspace</p>
+    <h1>Class administration</h1>
+    <p class="lead">Manage classes, weekly meetings, memberships, campus news and staff access.</p>
+  </section>
+
+  <div id="admin-access" aria-live="polite">
+    <div class="state" role="status">Checking staff access…</div>
+  </div>
+
+  <div id="admin-workspace" hidden>
+    <div class="admin-toolbar">
+      <p id="admin-identity" class="muted"></p>
+      <label class="selected-class-control" for="admin-class-select">
+        Working with
+        <select id="admin-class-select" aria-label="Selected class"></select>
+      </label>
+    </div>
+
+    <div class="tabs" role="tablist" aria-label="Administration sections">
+      <button id="tab-classes" class="tab is-active" type="button" role="tab" aria-selected="true" aria-controls="panel-classes" data-tab="classes">Classes</button>
+      <button id="tab-meetings" class="tab" type="button" role="tab" aria-selected="false" aria-controls="panel-meetings" data-tab="meetings">Meetings</button>
+      <button id="tab-members" class="tab" type="button" role="tab" aria-selected="false" aria-controls="panel-members" data-tab="members">Members</button>
+      <button id="tab-news" class="tab" type="button" role="tab" aria-selected="false" aria-controls="panel-news" data-tab="news">News</button>
+      <button id="tab-students" class="tab" type="button" role="tab" aria-selected="false" aria-controls="panel-students" data-tab="students">Students</button>
+      <button id="tab-applications" class="tab" type="button" role="tab" aria-selected="false" aria-controls="panel-applications" data-tab="applications" data-superadmin hidden>Applications</button>
+      <button id="tab-admins" class="tab" type="button" role="tab" aria-selected="false" aria-controls="panel-admins" data-tab="admins" data-superadmin hidden>Administrators</button>
+    </div>
+
+    <div id="admin-feedback" class="feedback" aria-live="polite"></div>
+
+    <section id="panel-classes" class="admin-panel" role="tabpanel" aria-labelledby="tab-classes" data-panel="classes">
+      <div class="panel-heading">
+        <div>
+          <h2>Class catalogue</h2>
+          <p class="muted">Staff can see drafts, published and archived classes.</p>
+        </div>
+        <button class="btn btn-primary btn-sm" id="new-class" type="button" data-superadmin hidden>New class</button>
+      </div>
+      <form id="class-form" class="panel stack-form inset-panel" data-superadmin hidden>
+        <h3 id="class-form-title">Create a class</h3>
+        <input type="hidden" name="id">
+        <div class="form-grid">
+          <div class="field" id="class-code-field">
+            <label for="admin-class-code">Class code</label>
+            <input id="admin-class-code" name="code" minlength="2" maxlength="32" pattern="[A-Za-z0-9][A-Za-z0-9_-]*" required>
+          </div>
+          <div class="field">
+            <label for="admin-class-title">Title</label>
+            <input id="admin-class-title" name="title" minlength="2" maxlength="160" required>
+          </div>
+        </div>
+        <div class="form-grid form-grid-three">
+          <div class="field">
+            <label for="admin-class-teacher">Teacher</label>
+            <input id="admin-class-teacher" name="teacher_name" minlength="2" maxlength="120" required>
+          </div>
+          <div class="field">
+            <label for="admin-class-category">Category <span class="optional">Optional</span></label>
+            <input id="admin-class-category" name="category" maxlength="80">
+          </div>
+          <div class="field">
+            <label for="admin-class-capacity">Capacity <span class="optional">Optional</span></label>
+            <input id="admin-class-capacity" name="capacity" type="number" min="1" max="1000">
+          </div>
+        </div>
+        <div class="field">
+          <label for="admin-class-description">Description <span class="optional">Optional</span></label>
+          <textarea id="admin-class-description" name="description" rows="4" maxlength="4000"></textarea>
+        </div>
+        <div class="field field-short">
+          <label for="admin-class-status">Status</label>
+          <select id="admin-class-status" name="status">
+            <option value="draft">Draft</option>
+            <option value="published">Published</option>
+            <option value="archived">Archived</option>
+          </select>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" type="submit">Save class</button>
+          <button class="btn btn-ghost" id="cancel-class-edit" type="button">Cancel</button>
+        </div>
+      </form>
+      <div id="admin-class-list" class="admin-list" aria-live="polite"></div>
+    </section>
+
+    <section id="panel-meetings" class="admin-panel" role="tabpanel" aria-labelledby="tab-meetings" data-panel="meetings" hidden>
+      <div class="panel-heading">
+        <div>
+          <h2>Weekly meetings</h2>
+          <p class="muted">Add, move or remove meeting slots for the selected class.</p>
+        </div>
+      </div>
+      <form id="meeting-form" class="panel stack-form inset-panel">
+        <h3 id="meeting-form-title">Add a meeting</h3>
+        <input type="hidden" name="id">
+        <div class="form-grid form-grid-three">
+          <div class="field">
+            <label for="meeting-weekday">Day</label>
+            <select id="meeting-weekday" name="weekday" required>
+              <option value="0">Monday</option>
+              <option value="1">Tuesday</option>
+              <option value="2">Wednesday</option>
+              <option value="3">Thursday</option>
+              <option value="4">Friday</option>
+              <option value="5">Saturday</option>
+              <option value="6">Sunday</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="meeting-start">Starts</label>
+            <input id="meeting-start" name="start_time" type="time" required>
+          </div>
+          <div class="field">
+            <label for="meeting-end">Ends</label>
+            <input id="meeting-end" name="end_time" type="time" required>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="field">
+            <label for="meeting-room">Room <span class="optional">Optional</span></label>
+            <input id="meeting-room" name="room" maxlength="80">
+          </div>
+          <div class="field">
+            <label for="meeting-audience">Visible to</label>
+            <select id="meeting-audience" name="audience">
+              <option value="everyone">Everyone</option>
+              <option value="members">Members only</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label for="meeting-note">Note <span class="optional">Optional</span></label>
+          <input id="meeting-note" name="note" maxlength="500">
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" type="submit">Save meeting</button>
+          <button class="btn btn-ghost" id="cancel-meeting-edit" type="button">Cancel</button>
+        </div>
+      </form>
+      <div id="meeting-list" class="admin-list"></div>
+    </section>
+
+    <section id="panel-members" class="admin-panel" role="tabpanel" aria-labelledby="tab-members" data-panel="members" hidden>
+      <div class="panel-heading">
+        <div>
+          <h2>Class members</h2>
+          <p class="muted">Promote visitors to members, change roles or remove a membership.</p>
+        </div>
+      </div>
+      <div id="membership-list" class="admin-list" aria-live="polite"></div>
+    </section>
+
+    <section id="panel-news" class="admin-panel" role="tabpanel" aria-labelledby="tab-news" data-panel="news" hidden>
+      <div class="panel-heading">
+        <div>
+          <h2>News posts</h2>
+          <p class="muted">Publish campus updates or members-only club news.</p>
+        </div>
+        <button class="btn btn-ghost btn-sm" id="new-news" type="button">New post</button>
+      </div>
+      <form id="news-form" class="panel stack-form inset-panel">
+        <h3 id="news-form-title">Create a news post</h3>
+        <input type="hidden" name="id">
+        <div class="field">
+          <label for="news-title-input">Title</label>
+          <input id="news-title-input" name="title" minlength="3" maxlength="160" required>
+        </div>
+        <div class="field">
+          <label for="news-body-input">Body</label>
+          <textarea id="news-body-input" name="body" rows="5" minlength="10" maxlength="20000" required></textarea>
+        </div>
+        <div class="form-grid">
+          <div class="field">
+            <label for="news-class">Related class <span class="optional">Optional for public news</span></label>
+            <select id="news-class" name="class_id"></select>
+          </div>
+          <div class="field">
+            <label for="news-audience">Audience</label>
+            <select id="news-audience" name="audience">
+              <option value="public">Public</option>
+              <option value="members">Members only</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" type="submit">Save post</button>
+          <button class="btn btn-ghost" id="cancel-news-edit" type="button">Cancel</button>
+        </div>
+      </form>
+      <div id="news-list" class="admin-list" aria-live="polite"></div>
+    </section>
+
+    <section id="panel-students" class="admin-panel" role="tabpanel" aria-labelledby="tab-students" data-panel="students" hidden>
+      <div class="panel-heading">
+        <div>
+          <h2>Student directory</h2>
+          <p class="muted">Find students by name, email or student number.</p>
+        </div>
+      </div>
+      <form id="student-search" class="inline-search" role="search">
+        <label class="sr-only" for="student-query">Search students</label>
+        <input id="student-query" name="q" type="search" placeholder="Name, email or student number">
+        <button class="btn btn-primary" type="submit">Search</button>
+      </form>
+      <div id="student-list" class="admin-list" aria-live="polite"></div>
+    </section>
+
+    <section id="panel-applications" class="admin-panel" role="tabpanel" aria-labelledby="tab-applications" data-panel="applications" data-superadmin hidden>
+      <div class="panel-heading">
+        <div>
+          <h2>Administrator applications</h2>
+          <p class="muted">Review requests and record an optional decision note.</p>
+        </div>
+        <div class="field compact-field">
+          <label for="application-status-filter">Status</label>
+          <select id="application-status-filter">
+            <option value="pending">Pending</option>
+            <option value="">All</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+      </div>
+      <div id="admin-application-list" class="admin-list" aria-live="polite"></div>
+    </section>
+
+    <section id="panel-admins" class="admin-panel" role="tabpanel" aria-labelledby="tab-admins" data-panel="admins" data-superadmin hidden>
+      <div class="panel-heading">
+        <div>
+          <h2>Administrators</h2>
+          <p class="muted">View current staff or grant administrator access directly.</p>
+        </div>
+      </div>
+      <form id="grant-admin-form" class="panel stack-form inset-panel">
+        <h3>Grant administrator access</h3>
+        <div class="form-grid form-grid-three">
+          <div class="field">
+            <label for="grant-user-id">User ID</label>
+            <input id="grant-user-id" name="user_id" type="number" min="1" required>
+          </div>
+          <div class="field">
+            <label for="grant-position">Position</label>
+            <input id="grant-position" name="position" value="Administrator" minlength="2" maxlength="120" required>
+          </div>
+          <div class="field">
+            <label for="grant-department">Department <span class="optional">Optional</span></label>
+            <input id="grant-department" name="department" maxlength="120">
+          </div>
+        </div>
+        <button class="btn btn-primary" type="submit">Grant access</button>
+      </form>
+      <div id="admin-directory" class="admin-list" aria-live="polite"></div>
+    </section>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="{{ url_for('static', path='js/admin.js') }}"></script>
+{% endblock %}

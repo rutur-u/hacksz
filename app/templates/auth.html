@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Your account &middot; {{ site_name }}{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+  <p class="eyebrow">Account</p>
+  <h1>Welcome to your campus community</h1>
+  <p class="lead">Sign in to join classes, or create a student account to get started.</p>
+</section>
+
+<div id="auth-feedback" class="feedback" aria-live="polite"></div>
+
+<div id="auth-forms" class="auth-grid" hidden>
+  <section class="panel" id="login" aria-labelledby="login-title">
+    <p class="eyebrow">Returning student</p>
+    <h2 id="login-title">Sign in</h2>
+    <form id="login-form" class="stack-form">
+      <div class="field">
+        <label for="login-email">University email</label>
+        <input id="login-email" name="email" type="email" autocomplete="email" required>
+      </div>
+      <div class="field">
+        <label for="login-password">Password</label>
+        <input id="login-password" name="password" type="password" autocomplete="current-password" required>
+      </div>
+      <button class="btn btn-primary" type="submit">Sign in</button>
+    </form>
+  </section>
+
+  <section class="panel" aria-labelledby="register-title">
+    <p class="eyebrow">New here?</p>
+    <h2 id="register-title">Create an account</h2>
+    <form id="register-form" class="stack-form">
+      <div class="field">
+        <label for="register-name">Full name</label>
+        <input id="register-name" name="full_name" autocomplete="name" minlength="2" maxlength="120" required>
+      </div>
+      <div class="field">
+        <label for="register-email">University email</label>
+        <input id="register-email" name="email" type="email" autocomplete="email" required>
+      </div>
+      <div class="field">
+        <label for="register-password">Password</label>
+        <input id="register-password" name="password" type="password" autocomplete="new-password" minlength="8" maxlength="128" required>
+        <small>At least 8 characters.</small>
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label for="register-number">Student number <span class="optional">Optional</span></label>
+          <input id="register-number" name="student_number" maxlength="32">
+        </div>
+        <div class="field">
+          <label for="register-year">Study year <span class="optional">Optional</span></label>
+          <input id="register-year" name="study_year" type="number" min="1" max="8">
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label for="register-faculty">Faculty <span class="optional">Optional</span></label>
+          <input id="register-faculty" name="faculty" maxlength="120">
+        </div>
+        <div class="field">
+          <label for="register-phone">Phone <span class="optional">Optional</span></label>
+          <input id="register-phone" name="phone" type="tel" autocomplete="tel" maxlength="32">
+        </div>
+      </div>
+      <button class="btn btn-primary" type="submit">Create account</button>
+    </form>
+  </section>
+</div>
+
+<section id="account" class="panel account-panel" aria-labelledby="account-title" hidden>
+  <div class="panel-heading">
+    <div>
+      <p class="eyebrow">Signed in</p>
+      <h2 id="account-title">Your account</h2>
+    </div>
+    <button class="btn btn-ghost btn-sm" id="account-logout" type="button">Sign out</button>
+  </div>
+  <div id="account-details"></div>
+</section>
+
+<section id="admin-application" class="panel section" aria-labelledby="application-title" hidden>
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">Staff access</p>
+      <h2 id="application-title">Apply to become an administrator</h2>
+      <p class="muted">The main administrator reviews every application.</p>
+    </div>
+  </div>
+  <form id="application-form" class="stack-form">
+    <div class="form-grid">
+      <div class="field">
+        <label for="application-position">Requested position</label>
+        <input id="application-position" name="requested_position" minlength="2" maxlength="120" required>
+      </div>
+      <div class="field">
+        <label for="application-department">Department <span class="optional">Optional</span></label>
+        <input id="application-department" name="department" maxlength="120">
+      </div>
+    </div>
+    <div class="field">
+      <label for="application-motivation">Motivation</label>
+      <textarea id="application-motivation" name="motivation" rows="5" minlength="10" maxlength="2000" required></textarea>
+    </div>
+    <button class="btn btn-primary" type="submit">Submit application</button>
+  </form>
+  <div class="subsection">
+    <h3>Application history</h3>
+    <div id="application-history" aria-live="polite"></div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="{{ url_for('static', path='js/auth.js') }}"></script>
+{% endblock %}

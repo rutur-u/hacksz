@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+
+{% block title %}Class details &middot; {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="detail-page" data-class-id="{{ class_id }}">
+  <a class="back-link" href="/classes">{{ icon("arrow-left") }} Back to all classes</a>
+  <div id="class-detail" aria-live="polite">
+    <div class="state" role="status">Loading class details…</div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="{{ url_for('static', path='js/class-detail.js') }}"></script>
+{% endblock %}

@@ -10,13 +10,14 @@ from __future__ import annotations
 from datetime import date
 from typing import Any
 
-SITE_NAME = "Campus Extra Classes"
+SITE_NAME = "smbuclubs"
 
 NAV: list[dict[str, str]] = [
-    {"key": "home", "label": "Home", "url": "/"},
-    {"key": "search", "label": "Find a class", "url": "/classes"},
-    {"key": "my_classes", "label": "My classes", "url": "/my-classes"},
-    {"key": "admin", "label": "Admin", "url": "/admin"},
+    {"key": "home", "label": "首页", "url": "/"},
+    {"key": "search", "label": "社团", "url": "/classes"},
+    {"key": "news", "label": "公告", "url": "/#news"},
+    {"key": "my_classes", "label": "我的课程", "url": "/my-classes"},
+    {"key": "admin", "label": "管理", "url": "/admin"},
 ]
 
 QUICK_LINKS: list[dict[str, str]] = [

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+
+{% block title %}Find a class &middot; {{ site_name }}{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+  <p class="eyebrow">Discover</p>
+  <h1>Find your next extra class</h1>
+  <p class="lead">Search published classes by name, teacher, category or weekly meeting day.</p>
+</section>
+
+<form id="class-filters" class="filter-bar" role="search">
+  <div class="field filter-search">
+    <label for="class-query">Search classes</label>
+    <input id="class-query" name="q" type="search" placeholder="Name, code, teacher or description">
+  </div>
+  <div class="field">
+    <label for="class-category">Category</label>
+    <select id="class-category" name="category">
+      <option value="">All categories</option>
+    </select>
+  </div>
+  <div class="field">
+    <label for="class-weekday">Meeting day</label>
+    <select id="class-weekday" name="weekday">
+      <option value="">Any day</option>
+      <option value="0">Monday</option>
+      <option value="1">Tuesday</option>
+      <option value="2">Wednesday</option>
+      <option value="3">Thursday</option>
+      <option value="4">Friday</option>
+      <option value="5">Saturday</option>
+      <option value="6">Sunday</option>
+    </select>
+  </div>
+  <div class="field" id="class-status-field" hidden>
+    <label for="class-status">Status</label>
+    <select id="class-status" name="status">
+      <option value="">All statuses</option>
+      <option value="published">Published</option>
+      <option value="draft">Draft</option>
+      <option value="archived">Archived</option>
+    </select>
+  </div>
+  <div class="filter-actions">
+    <button class="btn btn-primary" type="submit">Search</button>
+    <button class="btn btn-ghost" id="clear-filters" type="button">Clear</button>
+  </div>
+</form>
+
+<div class="results-heading">
+  <p id="class-count" class="muted" aria-live="polite"></p>
+</div>
+<div id="class-results" class="catalogue-grid" aria-live="polite">
+  <div class="state" role="status">Loading classes…</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="{{ url_for('static', path='js/classes.js') }}"></script>
+{% endblock %}

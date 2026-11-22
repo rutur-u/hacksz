@@ -1,39 +1,121 @@
 {% extends "base.html" %}
 {% from "_icons.html" import icon %}
 
-{% block title %}{{ site_name }} &middot; every extra class in one place{% endblock %}
+{% block title %}发现你的社团 &middot; {{ site_name }}{% endblock %}
 
 {% block content %}
-<section class="hero">
-  <div class="hero-copy">
-    <p class="eyebrow">Student life &middot; {{ current_year }}/{{ (current_year + 1) % 100 }}</p>
-    <h1>Every extra class on campus, in one place.</h1>
-    <p class="lead">
-      Browse what the university offers beyond the curriculum, join the classes you like,
-      and keep your week organised without a single spreadsheet.
+<div lang="zh-CN">
+  <section class="landing-hero">
+    <p class="hero-kicker">发现 &middot; 连接 &middot; 成长</p>
+    <h1>发现你的社团</h1>
+    <p class="hero-subtitle">
+      在这里遇见同频伙伴，探索兴趣、收获成长，让大学生活拥有更多精彩。
     </p>
-    <div class="hero-actions">
-      <a class="btn btn-primary" href="/classes">Find a class {{ icon("arrow-right") }}</a>
-      <a class="btn btn-ghost" href="/register">Create an account</a>
-    </div>
-  </div>
+    <a class="hero-button" href="/classes">浏览全部社团 {{ icon("arrow-right") }}</a>
+    <p class="hero-english" lang="en">Every extra class on campus, in one place.</p>
+  </section>
 
-  <aside class="hero-card" aria-label="Example weekly timetable">
-    <div class="hero-card-head">
-      <span class="dot" aria-hidden="true"></span>
-      <span>Your week</span>
-      <span class="hero-card-meta">example</span>
+  <dl class="stats-row" aria-label="社团统计">
+    <div class="stat">
+      <dt>社团总数</dt>
+      <dd>24</dd>
     </div>
-    <ul class="mini-timetable">
-      <li><span class="mini-day">Mon</span><span class="mini-body">Robotics lab<em>16:30 &middot; Room B204</em></span></li>
-      <li><span class="mini-day">Wed</span><span class="mini-body">Chamber choir<em>18:00 &middot; Hall 1</em></span></li>
-      <li><span class="mini-day">Fri</span><span class="mini-body">Photography walk<em>15:00 &middot; Main gate</em></span></li>
-    </ul>
-    <p class="hero-card-foot">Two seats left in Robotics lab</p>
-  </aside>
-</section>
+    <div class="stat">
+      <dt>社团成员</dt>
+      <dd>3,800</dd>
+    </div>
+    <div class="stat">
+      <dt>开放招募</dt>
+      <dd>8</dd>
+    </div>
+  </dl>
 
-<section class="section" aria-labelledby="start-title">
+  <section class="section clubs-section" aria-labelledby="clubs-title">
+    <div class="section-head">
+      <div>
+        <h2 id="clubs-title">热门社团</h2>
+        <p class="muted">从兴趣出发，找到让你心动的那一群人。</p>
+      </div>
+      <a class="clubs-more" href="/classes">查看全部 {{ icon("arrow-right") }}</a>
+    </div>
+
+    <div class="club-grid">
+      <a class="club-card" href="/classes" aria-label="了解机器人协会">
+        <div class="club-card-head">
+          <h3>机器人协会</h3>
+          <span class="club-badge club-badge-tech"><span aria-hidden="true">🤖</span>科技</span>
+        </div>
+        <ul class="club-details">
+          <li><span class="club-meta-label">活动日</span><span>每周三</span></li>
+          <li><span class="club-meta-label">时间</span><span>19:00&ndash;20:30</span></li>
+          <li><span class="club-meta-label">地点</span><span>工程楼 B204</span></li>
+        </ul>
+      </a>
+
+      <a class="club-card" href="/classes" aria-label="了解星辉合唱团">
+        <div class="club-card-head">
+          <h3>星辉合唱团</h3>
+          <span class="club-badge club-badge-art"><span aria-hidden="true">🎨</span>艺术</span>
+        </div>
+        <ul class="club-details">
+          <li><span class="club-meta-label">活动日</span><span>每周一</span></li>
+          <li><span class="club-meta-label">时间</span><span>18:30&ndash;20:00</span></li>
+          <li><span class="club-meta-label">地点</span><span>艺术中心排练厅</span></li>
+        </ul>
+      </a>
+
+      <a class="club-card" href="/classes" aria-label="了解光影摄影社">
+        <div class="club-card-head">
+          <h3>光影摄影社</h3>
+          <span class="club-badge club-badge-art"><span aria-hidden="true">🎨</span>艺术</span>
+        </div>
+        <ul class="club-details">
+          <li><span class="club-meta-label">活动日</span><span>每周五</span></li>
+          <li><span class="club-meta-label">时间</span><span>16:00&ndash;17:30</span></li>
+          <li><span class="club-meta-label">地点</span><span>学生活动中心 302</span></li>
+        </ul>
+      </a>
+
+      <a class="club-card" href="/classes" aria-label="了解篮球俱乐部">
+        <div class="club-card-head">
+          <h3>篮球俱乐部</h3>
+          <span class="club-badge club-badge-sports"><span aria-hidden="true">⚽</span>体育</span>
+        </div>
+        <ul class="club-details">
+          <li><span class="club-meta-label">活动日</span><span>每周二</span></li>
+          <li><span class="club-meta-label">时间</span><span>17:00&ndash;18:30</span></li>
+          <li><span class="club-meta-label">地点</span><span>东区篮球场</span></li>
+        </ul>
+      </a>
+
+      <a class="club-card" href="/classes" aria-label="了解俄语文化社">
+        <div class="club-card-head">
+          <h3>俄语文化社</h3>
+          <span class="club-badge club-badge-culture">人文</span>
+        </div>
+        <ul class="club-details">
+          <li><span class="club-meta-label">活动日</span><span>每周四</span></li>
+          <li><span class="club-meta-label">时间</span><span>19:00&ndash;20:00</span></li>
+          <li><span class="club-meta-label">地点</span><span>图书馆研讨室 2</span></li>
+        </ul>
+      </a>
+
+      <a class="club-card" href="/classes" aria-label="了解青年志愿者协会">
+        <div class="club-card-head">
+          <h3>青年志愿者协会</h3>
+          <span class="club-badge club-badge-community">公益</span>
+        </div>
+        <ul class="club-details">
+          <li><span class="club-meta-label">活动日</span><span>每周六</span></li>
+          <li><span class="club-meta-label">时间</span><span>09:30&ndash;11:00</span></li>
+          <li><span class="club-meta-label">地点</span><span>学生服务中心</span></li>
+        </ul>
+      </a>
+    </div>
+  </section>
+</div>
+
+<section class="section portal-section" aria-labelledby="start-title">
   <div class="section-head">
     <h2 id="start-title">Get started</h2>
     <p class="muted">Four doors into the portal &mdash; all of them still being built.</p>
@@ -51,25 +133,17 @@
   </div>
 </section>
 
-<section class="section" aria-labelledby="news-title">
+<section class="section" id="news" aria-labelledby="news-title">
   <div class="section-head">
     <h2 id="news-title">News &amp; updates</h2>
     <p class="muted">What is happening with extra classes and this portal.</p>
   </div>
-  <div class="news-list">
-    {% for item in news %}
-    <article class="news-item">
-      <div class="news-date">
-        <span class="news-day">{{ item.date.strftime("%d") }}</span>
-        <span class="news-month">{{ item.date.strftime("%b") }}</span>
-      </div>
-      <div class="news-body">
-        <span class="pill">{{ item.tag }}</span>
-        <h3>{{ item.title }}</h3>
-        <p>{{ item.body }}</p>
-      </div>
-    </article>
-    {% endfor %}
+  <div class="news-list" id="home-news" aria-live="polite">
+    <div class="state" role="status">Loading news…</div>
   </div>
 </section>
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="{{ url_for('static', path='js/home.js') }}"></script>
 {% endblock %}

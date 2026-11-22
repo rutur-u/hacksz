@@ -52,26 +52,29 @@ def home(request: Request) -> HTMLResponse:
     )
 
 
-# --- Placeholder pages -------------------------------------------------------
-# The shell is finished; each feature below is owned by a teammate.
 @app.get("/register", response_class=HTMLResponse)
 def register(request: Request) -> HTMLResponse:
-    return _stub(request, "register")
+    return render(request, "auth.html", active="register")
 
 
 @app.get("/classes", response_class=HTMLResponse)
 def search_classes(request: Request) -> HTMLResponse:
-    return _stub(request, "search")
+    return render(request, "classes.html", active="search")
+
+
+@app.get("/classes/{class_id}", response_class=HTMLResponse)
+def class_detail(request: Request, class_id: int) -> HTMLResponse:
+    return render(request, "class_detail.html", active="search", class_id=class_id)
 
 
 @app.get("/my-classes", response_class=HTMLResponse)
 def my_classes(request: Request) -> HTMLResponse:
-    return _stub(request, "my_classes")
+    return render(request, "my_classes.html", active="my_classes")
 
 
 @app.get("/admin", response_class=HTMLResponse)
 def admin(request: Request) -> HTMLResponse:
-    return _stub(request, "admin")
+    return render(request, "admin.html", active="admin")
 
 
 def _stub(request: Request, key: str) -> HTMLResponse:
