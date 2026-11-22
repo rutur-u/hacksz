@@ -117,17 +117,17 @@
 
 <section class="section portal-section" aria-labelledby="start-title">
   <div class="section-head">
-    <h2 id="start-title">Get started</h2>
-    <p class="muted">Four doors into the portal &mdash; all of them still being built.</p>
+    <h2 id="start-title">{{ t('home.get_started') }}</h2>
+    <p class="muted">{{ t('home.get_started_lead') }}</p>
   </div>
   <div class="card-grid">
     {% for link in quick_links %}
     <a class="card" href="{{ link.url }}">
       <span class="card-icon">{{ icon(link.icon) }}</span>
-      <span class="card-eyebrow">{{ link.eyebrow }}</span>
-      <h3>{{ link.title }}</h3>
-      <p>{{ link.body }}</p>
-      <span class="card-more">Open {{ icon("arrow-right") }}</span>
+      <span class="card-eyebrow">{{ t(link.eyebrow) }}</span>
+      <h3>{{ t(link.title) }}</h3>
+      <p>{{ t(link.body) }}</p>
+      <span class="card-more">{{ t('common.open') }} {{ icon("arrow-right") }}</span>
     </a>
     {% endfor %}
   </div>
@@ -135,8 +135,8 @@
 
 <section class="section" id="news" aria-labelledby="news-title">
   <div class="section-head">
-    <h2 id="news-title">News &amp; updates</h2>
-    <p class="muted">What is happening with extra classes and this portal.</p>
+    <h2 id="news-title">{{ t('home.news_title') }}</h2>
+    <p class="muted">{{ t('home.news_lead') }}</p>
   </div>
   <div class="news-list" id="home-news" aria-live="polite">
     <div class="state" role="status">Loading news…</div>

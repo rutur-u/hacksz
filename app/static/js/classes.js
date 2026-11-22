@@ -87,22 +87,42 @@ function populateCategories(selected) {
   categoryInput.value = selected;
 }
 
-function matchesQuery(course, needle) {
-  if (!needle) return true;
-  return [course.title, course.description, course.code, course.teacher_name]
-    .some((value) => String(value ?? "").toLowerCase().includes(needle));
+function scoreCourse(course, tokens) {
+  const title = String(course.title ?? "").toLowerCase();
+  const haystack = [title, course.code, course.description, course.teacher_name, course.category]
+    .map((value) => String(value ?? "").toLowerCase())
+    .join(" ");
+  let total = 0;
+  for (const token of tokens) {
+    let tokenScore = -1;
+    if (title.startsWith(token)) tokenScore = 0;
+    else if (title.split(/\s+/).some((word) => word.startsWith(token))) tokenScore = 1;
+    else if (title.includes(token)) tokenScore = 2;
+    else if (haystack.includes(token)) tokenScore = 3;
+    if (tokenScore < 0) return -1;
+    total += tokenScore;
+  }
+  return total;
 }
 
 function render() {
-  const needle = searchInput.value.trim().toLowerCase();
+  const tokens = searchInput.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
   const category = categoryInput.value;
   const weekday = weekdayInput.value;
   const status = statusInput.value;
-  const items = catalogue.filter((course) =>
-    matchesQuery(course, needle)
-    && (!category || course.category === category)
-    && (!status || course.status === status)
-    && (weekday === "" || course.meetings.some((meeting) => String(meeting.weekday) === weekday)));
+  const items = catalogue
+    .map((course, index) => ({
+      course,
+      index,
+      score: tokens.length ? scoreCourse(course, tokens) : 0,
+    }))
+    .filter((entry) =>
+      entry.score >= 0
+      && (!category || entry.course.category === category)
+      && (!status || entry.course.status === status)
+      && (weekday === "" || entry.course.meetings.some((meeting) => String(meeting.weekday) === weekday)))
+    .sort((a, b) => a.score - b.score || a.index - b.index)
+    .map((entry) => entry.course);
 
   count.textContent = weekday === ""
     ? `${items.length} ${items.length === 1 ? "class" : "classes"} found`

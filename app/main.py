@@ -7,15 +7,16 @@ Run locally with::
 
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from app import content
+from app import content, i18n
 from app.api import api_router
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -32,12 +33,44 @@ app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="stat
 app.include_router(api_router)
 
 
+@app.middleware("http")
+async def localize(
+    request: Request,
+    call_next: Callable[[Request], Awaitable[Response]],
+) -> Response:
+    """Select the page language and persist an explicit switch in a cookie."""
+    requested = request.query_params.get("lang")
+    request.state.locale = i18n.resolve_locale(
+        requested=requested,
+        stored=request.cookies.get(i18n.LANGUAGE_COOKIE),
+        accept_language=request.headers.get("accept-language"),
+    )
+    response = await call_next(request)
+    if i18n.is_supported(requested):
+        response.set_cookie(
+            i18n.LANGUAGE_COOKIE,
+            request.state.locale,
+            max_age=i18n.LANGUAGE_COOKIE_MAX_AGE,
+            httponly=True,
+            samesite="lax",
+        )
+    return response
+
+
 def render(request: Request, template_name: str, active: str, **context: object) -> HTMLResponse:
     """Render a template with the navigation state every page needs."""
+    locale = request.state.locale
     return templates.TemplateResponse(
         request=request,
         name=template_name,
-        context={"active": active, **context},
+        context={
+            "active": active,
+            "locale": locale,
+            "languages": i18n.LANGUAGES,
+            "site_name": i18n.translate(locale, "site.name"),
+            "t": lambda key, **values: i18n.translate(locale, key, **values),
+            **context,
+        },
     )
 
 

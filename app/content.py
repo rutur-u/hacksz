@@ -13,44 +13,44 @@ from typing import Any
 SITE_NAME = "smbuclubs"
 
 NAV: list[dict[str, str]] = [
-    {"key": "home", "label": "首页", "url": "/"},
-    {"key": "search", "label": "社团", "url": "/classes"},
-    {"key": "news", "label": "公告", "url": "/#news"},
-    {"key": "my_classes", "label": "我的课程", "url": "/my-classes"},
-    {"key": "admin", "label": "管理", "url": "/admin"},
+    {"key": "home", "label": "nav.home", "url": "/"},
+    {"key": "search", "label": "nav.search", "url": "/classes"},
+    {"key": "news", "label": "nav.news", "url": "/#news"},
+    {"key": "my_classes", "label": "nav.my_classes", "url": "/my-classes"},
+    {"key": "admin", "label": "nav.admin", "url": "/admin"},
 ]
 
 QUICK_LINKS: list[dict[str, str]] = [
     {
         "key": "register",
         "icon": "user",
-        "eyebrow": "Account",
-        "title": "Register",
-        "body": "Create a student account so you can join classes and keep everything in one place.",
+        "eyebrow": "quick.register.eyebrow",
+        "title": "quick.register.title",
+        "body": "quick.register.body",
         "url": "/register",
     },
     {
         "key": "search",
         "icon": "search",
-        "eyebrow": "Discover",
-        "title": "Find a class",
-        "body": "Browse every extra class on campus by name, category, teacher or weekday.",
+        "eyebrow": "quick.search.eyebrow",
+        "title": "quick.search.title",
+        "body": "quick.search.body",
         "url": "/classes",
     },
     {
         "key": "my_classes",
         "icon": "calendar",
-        "eyebrow": "Schedule",
-        "title": "My classes",
-        "body": "See the classes you joined, when and where they meet, and leave a class again.",
+        "eyebrow": "quick.my_classes.eyebrow",
+        "title": "quick.my_classes.title",
+        "body": "quick.my_classes.body",
         "url": "/my-classes",
     },
     {
         "key": "admin",
         "icon": "shield",
-        "eyebrow": "Staff",
-        "title": "Class administration",
-        "body": "Publish new classes, edit schedules, manage capacity and export rosters.",
+        "eyebrow": "quick.admin.eyebrow",
+        "title": "quick.admin.title",
+        "body": "quick.admin.body",
         "url": "/admin",
     },
 ]
