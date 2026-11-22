@@ -10,7 +10,7 @@ from __future__ import annotations
 from datetime import date
 from typing import Any
 
-SITE_NAME = "Campus Extra Classes"
+SITE_NAME = "smbuclubs"
 
 NAV: list[dict[str, str]] = [
     {"key": "home", "label": "Home", "url": "/"},

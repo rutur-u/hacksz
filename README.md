@@ -1,4 +1,4 @@
-# Campus Extra Classes
+# smbuclubs
 
 A portal for tracking extracurricular classes at the university. Students browse the
 catalogue, join classes and see their own weekly schedule. Staff publish classes and

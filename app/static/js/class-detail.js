@@ -76,7 +76,7 @@ function render() {
           </ul>` : state("No weekly meeting slots are visible to you.", "empty")}
       </section>
     </article>`;
-  document.title = `${course.title} · Campus Extra Classes`;
+  document.title = `${course.title} · smbuclubs`;
 }
 
 async function join(button) {
