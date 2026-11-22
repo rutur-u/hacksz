@@ -41,7 +41,13 @@ def render(request: Request, template_name: str, active: str, **context: object)
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request) -> HTMLResponse:
-    return render(request, "index.html", active="home", news=content.NEWS)
+    return render(
+        request,
+        "index.html",
+        active="home",
+        news=content.NEWS,
+        quick_links=content.QUICK_LINKS,
+    )
 
 
 # --- Placeholder pages -------------------------------------------------------

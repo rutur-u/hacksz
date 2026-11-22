@@ -15,6 +15,8 @@ def test_home_page_renders() -> None:
     assert response.status_code == 200
     assert "Every extra class on campus" in response.text
     assert "News &amp; updates" in response.text
+    for title in ("Register", "Find a class", "My classes", "Class administration"):
+        assert f"<h3>{title}</h3>" in response.text, title
 
 
 def test_placeholder_pages_render() -> None:
