@@ -1,10 +1,10 @@
 {% from "_icons.html" import icon %}<!DOCTYPE html>
-<html lang="en">
+<html lang="{{ locale }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{{ site_name }}{% endblock %}</title>
-  <meta name="description" content="Find, join and manage extra classes at the university.">
+  <meta name="description" content="{{ t('site.description') }}">
   <link rel="icon" href="{{ url_for('static', path='images/smbu-favicon.ico') }}">
   <script>
     (function () {
@@ -18,7 +18,7 @@
   <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}">
 </head>
 <body>
-  <a class="skip-link" href="#main">Skip to content</a>
+  <a class="skip-link" href="#main">{{ t('common.skip_to_content') }}</a>
 
   <header class="site-header">
     <div class="container header-inner">
@@ -48,23 +48,34 @@
         </span>
       </button>
 
-      <nav id="primary-nav" class="main-nav" aria-label="主导航" data-nav>
+      <nav id="primary-nav" class="main-nav" aria-label="{{ t('nav.label') }}" data-nav>
         {% for item in nav %}
         <a href="{{ item.url }}"
            class="nav-link{% if active == item.key %} is-active{% endif %}"
            {% if item.key == "admin" %}data-staff-link hidden{% endif %}
            {% if item.key == "my_classes" %}data-user-link hidden{% endif %}
-           {% if active == item.key %}aria-current="page"{% endif %}>{{ item.label }}</a>
+           {% if active == item.key %}aria-current="page"{% endif %}>{{ t(item.label) }}</a>
         {% endfor %}
       </nav>
 
       <div class="header-action">
+        <div class="language-switcher" role="group" aria-label="{{ t('language.label') }}">
+          {% for language in languages %}
+          <a class="language-option{% if language.code == locale %} is-active{% endif %}"
+             href="{{ request.url.include_query_params(lang=language.code) }}"
+             hreflang="{{ language.code }}"
+             lang="{{ language.code }}"
+             title="{{ t('language.switch.' ~ language.code) }}"
+             aria-label="{{ t('language.switch.' ~ language.code) }}"
+             {% if language.code == locale %}aria-current="true"{% endif %}>{{ language.label }}</a>
+          {% endfor %}
+        </div>
         <button class="theme-toggle" type="button" aria-label="切换深色模式"
                 aria-pressed="false" data-theme-toggle>
           <span class="theme-icon theme-icon-moon">{{ icon("moon") }}</span>
           <span class="theme-icon theme-icon-sun">{{ icon("sun") }}</span>
         </button>
-        <a class="btn btn-primary btn-sm" href="/register#login" data-guest-action>Sign in</a>
+        <a class="btn btn-primary btn-sm" href="/register#login" data-guest-action>{{ t('auth.sign_up') }}</a>
         <div class="header-user" data-user-action hidden>
           <a class="header-profile" href="/register#account" data-user-name>Account</a>
           <button class="btn btn-ghost btn-sm" type="button" data-logout>Sign out</button>
@@ -80,7 +91,7 @@
   <footer class="site-footer">
     <div class="container footer-inner">
       <p>&copy; {{ current_year }} {{ site_name }}</p>
-      <p class="muted">Student project &middot; campus community portal</p>
+      <p class="muted">{{ t('site.footer') }}</p>
     </div>
   </footer>
 

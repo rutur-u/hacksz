@@ -2038,3 +2038,38 @@ textarea:disabled {
     flex-direction: column;
   }
 }
+
+/* ---------- Language switcher ---------- */
+
+.language-switcher {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+}
+
+.language-option {
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.4;
+  color: var(--muted);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.language-option:hover {
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+}
+
+.language-option.is-active {
+  color: #fff;
+  background: var(--accent);
+}
