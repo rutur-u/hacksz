@@ -54,10 +54,10 @@ def test_stylesheet_is_served() -> None:
     assert response.headers["content-type"].startswith("text/css")
 
 
-def test_university_icon_is_used_and_served() -> None:
+def test_university_favicon_is_served() -> None:
     response = client.get("/")
     assert response.status_code == 200
-    assert response.text.count("/static/images/smbu-favicon.ico") == 2
+    assert response.text.count("/static/images/smbu-favicon.ico") == 1
 
     icon = client.get("/static/images/smbu-favicon.ico")
     assert icon.status_code == 200
