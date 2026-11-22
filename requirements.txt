@@ -1,3 +1,9 @@
 fastapi>=0.115,<1.0
 uvicorn>=0.32,<1.0
 jinja2>=3.1,<4.0
+
+# Data layer
+sqlalchemy>=2.0,<3.0
+alembic>=1.13,<2.0
+pwdlib[argon2]>=0.2,<1.0
+email-validator>=2.1

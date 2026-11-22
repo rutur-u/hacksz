@@ -4,19 +4,21 @@ A portal for tracking extracurricular classes at the university. Students browse
 catalogue, join classes and see their own weekly schedule. Staff publish classes and
 manage capacity and rosters.
 
-> **Status: skeleton.** The main page and the navigation shell are finished. Registration,
-> search, "my classes" and administration are placeholder pages that the team is building.
+> **Status: skeleton + accounts backend.** The main page, the navigation shell and the
+> accounts/admin-approval API are done. The public pages are still placeholders and the
+> visual layer is owned by another teammate.
 
 ## Stack
 
-| Layer    | Choice                                                        |
-| -------- | ------------------------------------------------------------- |
-| Runtime  | Python 3.11+ (3.13 recommended)                                |
-| Backend  | FastAPI + Uvicorn                                              |
-| Views    | Jinja2 server-rendered templates                               |
-| Styling  | Plain CSS with design tokens, no build step or CDN             |
-| Storage  | none yet — SQLite is planned                                   |
-| CI       | GitHub Actions: installs dependencies and runs `pytest`        |
+| Layer    | Choice                                                       |
+| -------- | ------------------------------------------------------------ |
+| Runtime  | Python 3.11+ (3.13 recommended)                               |
+| Backend  | FastAPI + Uvicorn                                             |
+| Views    | Jinja2 server-rendered templates                              |
+| Styling  | Plain CSS with design tokens, no build step or CDN            |
+| Storage  | SQLite + SQLAlchemy 2.0, schema versioned with Alembic        |
+| Auth     | Argon2 password hashes, opaque session token in an HttpOnly cookie |
+| CI       | GitHub Actions: installs dependencies and runs `pytest`       |
 
 ## Quick start
 
@@ -26,6 +28,8 @@ manage capacity and rosters.
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements-dev.txt
+alembic upgrade head
+python -m app.cli create-superadmin --email root@uni.edu --name "Main Admin"
 uvicorn app.main:app --reload
 ```
 
@@ -35,24 +39,44 @@ uvicorn app.main:app --reload
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements-dev.txt
+alembic upgrade head
+python -m app.cli create-superadmin --email root@uni.edu --name "Main Admin"
 uvicorn app.main:app --reload
 ```
 
-Open <http://127.0.0.1:8000>. Run the tests with `pytest`.
+Open <http://127.0.0.1:8000> for the site and <http://127.0.0.1:8000/docs> for the API
+explorer. Run the tests with `pytest`.
+
+Environment variables (all optional locally):
+
+| Variable                | Default              | Purpose                                  |
+| ----------------------- | -------------------- | ---------------------------------------- |
+| `DATABASE_URL`          | `sqlite:///./app.db` | Database connection string               |
+| `SESSION_COOKIE_SECURE` | `0`                  | Set to `1` behind HTTPS so the cookie is `Secure` |
 
 ## Project layout
 
 ```
 app/
-  main.py              FastAPI app, routes, template setup
-  content.py           temporary hard-coded content (news, nav, placeholder copy)
-  templates/
-    base.html          shared header, navigation, footer
-    index.html         main page: hero, quick links, news
-    stub.html          template used by every placeholder page
-    _icons.html        inline SVG icon macro
+  main.py              FastAPI app, page routes, template setup
+  content.py           hard-coded copy for the public pages
+  config.py            environment variables and session settings
+  db.py                engine, session factory, declarative base
+  models.py            users, profiles, applications, sessions, audit log
+  schemas.py           request/response models for the JSON API
+  services.py          business rules (registration, login, approvals)
+  security.py          Argon2 hashing and session tokens
+  cli.py               management commands (create the first main admin)
+  api/
+    deps.py            cookie-session auth and role checks
+    auth.py            register, login, logout, me
+    admin_applications.py
+    students.py        staff-facing student directory
+    admins.py          main-admin-facing admin directory
+  templates/           base shell, main page, placeholder page
   static/css/style.css design tokens and all page styles
-tests/test_pages.py    smoke tests for every route
+alembic/               migration environment and versions
+tests/                 page smoke tests + API tests
 .github/workflows/ci.yml
 ```
 
@@ -66,8 +90,47 @@ tests/test_pages.py    smoke tests for every route
 | `/my-classes` | `stub.html`   | Personal weekly schedule and enrolment          | placeholder |
 | `/admin`      | `stub.html`   | Staff CRUD for classes, capacity and rosters    | placeholder |
 
-News items, navigation and placeholder copy live in [`app/content.py`](app/content.py).
-Nothing there is connected to a database yet — that is intentional.
+The HTML pages are visually owned by another teammate. Data features are exposed as JSON
+under `/api` so screens can be wired up without touching templates.
+
+## Data model
+
+| Table                 | Holds                                                                 |
+| --------------------- | --------------------------------------------------------------------- |
+| `users`               | one account: lowercase-unique email, Argon2 hash, role, status, timestamps |
+| `student_profiles`    | student number (unique), faculty, study year, phone (1:1 with a student) |
+| `admin_profiles`      | position, department, approver, approval date (created only on approval) |
+| `admin_applications`  | request, motivation, status, reviewer, decision note                   |
+| `auth_sessions`       | SHA-256 hash of the cookie token, expiry, revocation                   |
+| `audit_log`           | append-only trail: who registered, logged in, approved or rejected what |
+
+Roles are `student`, `admin` and `superadmin` (the "main admin"). A student self-registers
+as `student`; becoming an `admin` requires an application and approval by a `superadmin`.
+Suspended accounts cannot log in.
+
+## API
+
+| Method | Path                                       | Who may call        |
+| ------ | ------------------------------------------ | ------------------- |
+| POST   | `/api/auth/register`                       | anyone              |
+| POST   | `/api/auth/login`                          | anyone              |
+| POST   | `/api/auth/logout`                         | logged in           |
+| GET    | `/api/auth/me`                             | logged in           |
+| POST   | `/api/admin-applications`                  | student             |
+| GET    | `/api/admin-applications/me`               | logged in           |
+| GET    | `/api/admin-applications?status=pending`   | main admin          |
+| POST   | `/api/admin-applications/{id}/approve`     | main admin          |
+| POST   | `/api/admin-applications/{id}/reject`      | main admin          |
+| GET    | `/api/students?q=&limit=&offset=`          | admin, main admin   |
+| GET    | `/api/students/{id}`                       | admin, main admin   |
+| GET    | `/api/admins?q=`                           | main admin          |
+
+Schema changes always come with a migration:
+
+```bash
+alembic revision --autogenerate -m "what changed"
+alembic upgrade head
+```
 
 ## Adding a page
 
@@ -87,11 +150,21 @@ Nothing there is connected to a database yet — that is intentional.
   `feat: add class search results`, `fix: correct room label`, `docs: update setup steps`.
 - **Never push to `main` directly.**
 
+## Ownership
+
+- **Accounts, profiles, admin approval, database** — this module.
+- **Visual design and page templates** — owned by the frontend teammate. Do not restyle
+  pages as a side effect of data work.
+- **Class catalogue and search** — owned by the search teammate. Their tables go in
+  `app/models.py`, their routes under `app/api/`, and they replace nothing in this module.
+
 ## Roadmap
 
-- [ ] Data model for classes, sessions, students and enrolments (SQLite + SQLAlchemy)
-- [ ] Registration and authentication
-- [ ] Catalogue search with filters
-- [ ] Personal schedule and enrolment actions
-- [ ] Admin CRUD, CSV export
+- [x] Accounts: registration, login, session cookies
+- [x] Admin applications with main-admin approval
+- [x] Student and admin directories for staff
+- [ ] Class catalogue, sessions and enrolment tables (search teammate)
+- [ ] Search and filters over the catalogue
+- [ ] Personal schedule view and enrolment actions
+- [ ] Admin CRUD for classes, CSV export
 - [ ] Seed data and a demo account for reviews

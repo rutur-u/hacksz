@@ -16,6 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from app import content
+from app.api import api_router
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -28,6 +29,7 @@ templates.env.globals.update(
 
 app = FastAPI(title=content.SITE_NAME, version="0.1.0")
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+app.include_router(api_router)
 
 
 def render(request: Request, template_name: str, active: str, **context: object) -> HTMLResponse:
