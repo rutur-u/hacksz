@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: campus-extra-classes
+    runtime: docker
+    plan: starter
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /
+    autoDeployTrigger: commit
+    envVars:
+      - key: DATABASE_URL
+        value: sqlite:////data/app.db
+      - key: SESSION_COOKIE_SECURE
+        value: "1"
+    disk:
+      name: app-data
+      mountPath: /data
+      sizeGB: 1

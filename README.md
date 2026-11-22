@@ -56,6 +56,31 @@ Environment variables (all optional locally):
 | `DATABASE_URL`          | `sqlite:///./app.db` | Database connection string               |
 | `SESSION_COOKIE_SECURE` | `0`                  | Set to `1` behind HTTPS so the cookie is `Secure` |
 
+## Deploy to Render
+
+The repository ships a `Dockerfile` and a `render.yaml` blueprint. Deployment is additive:
+it adds container files only and changes no templates, CSS, routes or API code, so future
+frontend and search commits keep working and auto-deploy on every push to `main`.
+
+1. Push to GitHub and open Render → **New → Blueprint**, pick this repository, apply.
+2. Render builds the image, runs `alembic upgrade head` and starts uvicorn on `$PORT`.
+3. SQLite lives at `/data/app.db` on a 1 GB persistent disk, so data survives restarts.
+4. Create the first main admin once from the Render **Shell**:
+
+   ```bash
+   python -m app.cli create-superadmin --email you@uni.edu --name "Your Name"
+   ```
+
+Notes:
+
+- Persistent disks require the **Starter** plan. On the free plan the disk is unavailable
+  and the database resets on redeploy; point `DATABASE_URL` at a managed Postgres instead.
+- Keep exactly one instance. SQLite does not support several writers; move to Postgres
+  before scaling horizontally.
+- `SESSION_COOKIE_SECURE=1` is already set so the session cookie is HTTPS-only.
+- Local Docker is optional; `docker build -t campus-extra-classes .` and
+  `docker run -p 8000:8000 campus-extra-classes` reproduce the production image.
+
 ## Project layout
 
 ```
@@ -82,6 +107,9 @@ app/
 alembic/               migration environment and versions
 tests/                 page smoke tests + API tests
 .github/workflows/ci.yml
+Dockerfile             production image (migrations + uvicorn)
+render.yaml            Render Blueprint: service, disk, env vars
+.dockerignore
 ```
 
 ## Pages

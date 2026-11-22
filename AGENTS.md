@@ -31,6 +31,8 @@ placeholders; the search ranking and enrolments are another teammate's work.
 - `app/schemas.py` — Pydantic request/response models.
 - `app/db.py`, `app/config.py`, `app/security.py` — engine, settings, hashing and tokens.
 - `alembic/versions/` — schema history. Never change a migrated table without a new revision.
+- `Dockerfile` and `render.yaml` — production image and Render Blueprint. Deployment is
+  additive; do not special-case container paths in app code.
 - `tests/` — `test_pages.py` for HTML, `test_api_*.py` for the API (in-memory SQLite).
 
 ## Conventions
