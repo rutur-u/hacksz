@@ -12,6 +12,13 @@ from datetime import timedelta
 # SQLite by default; point this at Postgres later without touching the code.
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./app.db")
 
+# Managed Postgres (Neon, Render, Supabase) hands out postgresql:// URLs, but
+# SQLAlchemy needs the driver name; psycopg 3 is what requirements.txt installs.
+if DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = "postgresql+psycopg://" + DATABASE_URL[len("postgresql://") :]
+elif DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = "postgresql+psycopg://" + DATABASE_URL[len("postgres://") :]
+
 # Opaque token stored in an HttpOnly cookie and hashed in auth_sessions.
 SESSION_COOKIE_NAME = "ec_session"
 SESSION_TTL = timedelta(days=14)

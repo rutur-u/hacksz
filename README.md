@@ -56,15 +56,21 @@ Environment variables (all optional locally):
 | `DATABASE_URL`          | `sqlite:///./app.db` | Database connection string               |
 | `SESSION_COOKIE_SECURE` | `0`                  | Set to `1` behind HTTPS so the cookie is `Secure` |
 
-## Deploy to Render
+## Deploy for free (Render + Neon)
 
 The repository ships a `Dockerfile` and a `render.yaml` blueprint. Deployment is additive:
 it adds container files only and changes no templates, CSS, routes or API code, so future
 frontend and search commits keep working and auto-deploy on every push to `main`.
 
-1. Push to GitHub and open Render → **New → Blueprint**, pick this repository, apply.
-2. Render builds the image, runs `alembic upgrade head` and starts uvicorn on `$PORT`.
-3. SQLite lives at `/data/app.db` on a 1 GB persistent disk, so data survives restarts.
+Free stack: Render's free Docker web service plus a free Neon Postgres. No disk and no
+paid plan, and both free tiers work without a credit card.
+
+1. **Neon** — sign up at <https://neon.tech>, create a project, open *Connect* and copy the
+   **direct** connection string (the one without `-pooler`). It starts with `postgresql://`.
+2. **Render** — sign up with GitHub, then **New → Blueprint**, pick this repository and
+   branch `main`. When Render asks for `DATABASE_URL`, paste the Neon string there.
+3. Render builds the image, runs `alembic upgrade head` against Neon and starts uvicorn on
+   `$PORT`. The `render.yaml` has no disk; the database is Neon.
 4. Create the first main admin once from the Render **Shell**:
 
    ```bash
@@ -73,13 +79,15 @@ frontend and search commits keep working and auto-deploy on every push to `main`
 
 Notes:
 
-- Persistent disks require the **Starter** plan. On the free plan the disk is unavailable
-  and the database resets on redeploy; point `DATABASE_URL` at a managed Postgres instead.
-- Keep exactly one instance. SQLite does not support several writers; move to Postgres
-  before scaling horizontally.
+- The free Render service sleeps after 15 minutes idle; the first request afterwards takes
+  roughly a minute to wake it. Neon also suspends idle compute and wakes on the first query.
+- Keep exactly one Render instance. Scale later by upgrading the service, not by adding
+  instances around SQLite.
 - `SESSION_COOKIE_SECURE=1` is already set so the session cookie is HTTPS-only.
+- Prefer SQLite on a persistent disk? Switch `plan` to `starter`, add the `disk` block back
+  and point `DATABASE_URL` at `sqlite:////data/app.db`; the history has that variant.
 - Local Docker is optional; `docker build -t campus-extra-classes .` and
-  `docker run -p 8000:8000 campus-extra-classes` reproduce the production image.
+  `docker run -p 8000:8000 -e DATABASE_URL=... campus-extra-classes` reproduce the image.
 
 ## Project layout
 
