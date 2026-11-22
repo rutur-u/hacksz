@@ -55,3 +55,11 @@ def require_roles(*roles: Role) -> Callable[..., User]:
         return user
 
     return dependency
+
+
+def get_optional_user(request: Request, db: Session = Depends(get_db)) -> User | None:
+    """For endpoints that are public but show more to signed-in staff."""
+    try:
+        return get_current_user(request, db)
+    except HTTPException:
+        return None

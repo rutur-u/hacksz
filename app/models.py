@@ -1,16 +1,27 @@
-"""SQLAlchemy models for accounts, profiles, admin requests and audit trail.
+"""SQLAlchemy models for accounts, the class catalogue, news and the audit trail.
 
-Scope note: the class catalogue, enrolments and search are owned by the search
-teammate. Their tables belong in this module too, so imports stay in one place.
+Scope note: this module owns users, profiles, classes, weekly meeting slots and
+news posts. Student enrolments and the search ranking itself are still the search
+teammate's work; the tables and indexes they need live here.
 """
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, time, timezone
 from enum import StrEnum
 from typing import Any
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Index, JSON, String, Text
+from sqlalchemy import (
+    DateTime,
+    Enum,
+    ForeignKey,
+    Index,
+    JSON,
+    String,
+    Text,
+    Time,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -36,6 +47,12 @@ class ApplicationStatus(StrEnum):
     PENDING = "pending"
     APPROVED = "approved"
     REJECTED = "rejected"
+
+
+class ClassStatus(StrEnum):
+    DRAFT = "draft"
+    PUBLISHED = "published"
+    ARCHIVED = "archived"
 
 
 def enum_column(enum_class: type[StrEnum], name: str) -> Enum:
@@ -167,3 +184,79 @@ class AuditLog(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
     __table_args__ = (Index("ix_audit_log_entity", "entity_type", "entity_id"),)
+
+
+class ExtraClass(Base):
+    """One extracurricular course. Only the main admin creates or edits these."""
+
+    __tablename__ = "extra_classes"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    code: Mapped[str] = mapped_column(String(32), unique=True, index=True)
+    title: Mapped[str] = mapped_column(String(160))
+    description: Mapped[str | None] = mapped_column(Text)
+    category: Mapped[str | None] = mapped_column(String(80))
+    teacher_name: Mapped[str] = mapped_column(String(120))
+    capacity: Mapped[int | None]
+    status: Mapped[ClassStatus] = mapped_column(
+        enum_column(ClassStatus, "class_status"),
+        default=ClassStatus.DRAFT,
+        index=True,
+    )
+    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
+
+    created_by: Mapped[User | None] = relationship(foreign_keys=[created_by_id])
+    meetings: Mapped[list[ClassMeeting]] = relationship(
+        back_populates="course",
+        cascade="all, delete-orphan",
+        order_by="(ClassMeeting.weekday, ClassMeeting.start_time)",
+        lazy="selectin",
+    )
+
+    __table_args__ = (
+        Index("ix_extra_classes_status_category", "status", "category"),
+        Index("ix_extra_classes_title", "title"),
+    )
+
+
+class ClassMeeting(Base):
+    """A weekly slot: the same room and time every week for a class."""
+
+    __tablename__ = "class_meetings"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    class_id: Mapped[int] = mapped_column(
+        ForeignKey("extra_classes.id", ondelete="CASCADE"), index=True
+    )
+    weekday: Mapped[int]  # 0 = Monday ... 6 = Sunday
+    start_time: Mapped[time] = mapped_column(Time)
+    end_time: Mapped[time] = mapped_column(Time)
+    room: Mapped[str | None] = mapped_column(String(80))
+    note: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
+
+    course: Mapped[ExtraClass] = relationship(back_populates="meetings")
+
+    __table_args__ = (
+        UniqueConstraint("class_id", "weekday", "start_time", name="uq_class_meetings_slot"),
+        Index("ix_class_meetings_weekday_time", "weekday", "start_time"),
+    )
+
+
+class NewsPost(Base):
+    """Campus news. Published as soon as staff post it, with no draft step."""
+
+    __tablename__ = "news_posts"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    title: Mapped[str] = mapped_column(String(160))
+    body: Mapped[str] = mapped_column(Text)
+    author_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    published_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
+
+    author: Mapped[User | None] = relationship(foreign_keys=[author_id])

@@ -4,9 +4,10 @@ A portal for tracking extracurricular classes at the university. Students browse
 catalogue, join classes and see their own weekly schedule. Staff publish classes and
 manage capacity and rosters.
 
-> **Status: skeleton + accounts backend.** The main page, the navigation shell and the
-> accounts/admin-approval API are done. The public pages are still placeholders and the
-> visual layer is owned by another teammate.
+> **Status: accounts + catalogue backend.** The main page, the navigation shell, the
+> accounts/admin-approval API, the class catalogue with weekly meeting slots, campus news
+> and direct admin grants are done. The public pages are still placeholders and the visual
+> layer is owned by another teammate; the search ranking is the search teammate's work.
 
 ## Stack
 
@@ -62,9 +63,9 @@ app/
   content.py           hard-coded copy for the public pages
   config.py            environment variables and session settings
   db.py                engine, session factory, declarative base
-  models.py            users, profiles, applications, sessions, audit log
+  models.py            users, profiles, applications, classes, meetings, news, audit log
   schemas.py           request/response models for the JSON API
-  services.py          business rules (registration, login, approvals)
+  services.py          business rules (registration, approvals, classes, news)
   security.py          Argon2 hashing and session tokens
   cli.py               management commands (create the first main admin)
   api/
@@ -72,7 +73,9 @@ app/
     auth.py            register, login, logout, me
     admin_applications.py
     students.py        staff-facing student directory
-    admins.py          main-admin-facing admin directory
+    admins.py          main-admin-facing admin directory and role grants
+    classes.py         public catalogue + main-admin writes + weekly slots
+    news.py            public news feed, staff publishing
   templates/           base shell, main page, placeholder page
   static/css/style.css design tokens and all page styles
 alembic/               migration environment and versions
@@ -103,10 +106,15 @@ under `/api` so screens can be wired up without touching templates.
 | `admin_applications`  | request, motivation, status, reviewer, decision note                   |
 | `auth_sessions`       | SHA-256 hash of the cookie token, expiry, revocation                   |
 | `audit_log`           | append-only trail: who registered, logged in, approved or rejected what |
+| `extra_classes`       | code (unique, upper-case), title, description, category, teacher, capacity, draft/published/archived |
+| `class_meetings`      | weekly slot per class: weekday 0-6, start/end time, room, note (unique class + weekday + start) |
+| `news_posts`          | title, body, author, publication timestamp (published immediately)     |
 
 Roles are `student`, `admin` and `superadmin` (the "main admin"). A student self-registers
-as `student`; becoming an `admin` requires an application and approval by a `superadmin`.
-Suspended accounts cannot log in.
+as `student`; becoming an `admin` happens either through an application approved by a
+`superadmin` or through a direct grant by the main admin. Suspended accounts cannot log in.
+Only the `superadmin` creates or edits classes; admins and the main admin manage the weekly
+meeting slots and post news. Visitors read only published classes and all news.
 
 ## API
 
@@ -124,6 +132,20 @@ Suspended accounts cannot log in.
 | GET    | `/api/students?q=&limit=&offset=`          | admin, main admin   |
 | GET    | `/api/students/{id}`                       | admin, main admin   |
 | GET    | `/api/admins?q=`                           | main admin          |
+| POST   | `/api/admins/grant`                        | main admin          |
+| GET    | `/api/classes?q=&category=&status=`        | anyone (status only for staff) |
+| GET    | `/api/classes/{id}`                        | anyone (unpublished only for staff) |
+| POST   | `/api/classes`                             | main admin          |
+| PATCH  | `/api/classes/{id}`                        | main admin          |
+| POST   | `/api/classes/{id}/archive`                | main admin          |
+| POST   | `/api/classes/{id}/meetings`               | admin, main admin   |
+| PATCH  | `/api/classes/{id}/meetings/{meeting_id}`  | admin, main admin   |
+| DELETE | `/api/classes/{id}/meetings/{meeting_id}`  | admin, main admin   |
+| GET    | `/api/news?q=`                             | anyone              |
+| GET    | `/api/news/{id}`                           | anyone              |
+| POST   | `/api/news`                                | admin, main admin   |
+| PATCH  | `/api/news/{id}`                           | admin, main admin   |
+| DELETE | `/api/news/{id}`                           | admin, main admin   |
 
 Schema changes always come with a migration:
 
@@ -152,19 +174,22 @@ alembic upgrade head
 
 ## Ownership
 
-- **Accounts, profiles, admin approval, database** — this module.
+- **Accounts, profiles, admin approval, class catalogue, meeting slots, news, database** —
+  this module.
 - **Visual design and page templates** — owned by the frontend teammate. Do not restyle
   pages as a side effect of data work.
-- **Class catalogue and search** — owned by the search teammate. Their tables go in
-  `app/models.py`, their routes under `app/api/`, and they replace nothing in this module.
+- **Search ranking and enrolment** — owned by the search teammate. The catalogue tables and
+  keyword/category filters are ready for them; they add enrolments and replace the simple
+  `q` filter with real ranking under `app/api/`.
 
 ## Roadmap
 
 - [x] Accounts: registration, login, session cookies
 - [x] Admin applications with main-admin approval
 - [x] Student and admin directories for staff
-- [ ] Class catalogue, sessions and enrolment tables (search teammate)
-- [ ] Search and filters over the catalogue
+- [x] Direct admin grants by the main admin
+- [x] Class catalogue, weekly meeting slots and campus news (JSON API)
+- [ ] Search ranking and filters over the catalogue (search teammate)
 - [ ] Personal schedule view and enrolment actions
-- [ ] Admin CRUD for classes, CSV export
+- [ ] Admin UI for classes, CSV export
 - [ ] Seed data and a demo account for reviews

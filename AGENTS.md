@@ -5,8 +5,9 @@ Guidance for AI coding assistants working in this repository. Read it before cha
 ## What this is
 
 A FastAPI + Jinja2 portal for extracurricular classes at a university. The main page, the
-navigation shell and the accounts API exist. Public feature pages are deliberate
-placeholders; the class catalogue and search are another teammate's work.
+navigation shell, the accounts API, the class catalogue with weekly meeting slots and campus
+news exist. Public feature pages are deliberate placeholders; the search ranking and
+enrolments are another teammate's work.
 
 ## Commands
 
@@ -23,9 +24,10 @@ placeholders; the class catalogue and search are another teammate's work.
 
 - `app/main.py` — page routes and app wiring. One function per public page.
 - `app/api/` — JSON endpoints under `/api`; `deps.py` holds auth and role checks.
-- `app/models.py` — every SQLAlchemy table. The search teammate adds theirs here too.
-- `app/services.py` — business rules (registration, login, approvals) that must hold for
-  every caller. Routers stay thin.
+- `app/models.py` — every SQLAlchemy table, including classes, weekly slots and news. The
+  search teammate adds enrolment tables here too.
+- `app/services.py` — business rules (registration, login, approvals, classes, meetings,
+  news) that must hold for every caller. Routers stay thin.
 - `app/schemas.py` — Pydantic request/response models.
 - `app/db.py`, `app/config.py`, `app/security.py` — engine, settings, hashing and tokens.
 - `alembic/versions/` — schema history. Never change a migrated table without a new revision.
@@ -49,6 +51,8 @@ placeholders; the class catalogue and search are another teammate's work.
   (`aria-hidden="true"`), colour is never the only signal.
 - Security: lowercase-normalise emails, never store raw passwords or raw session tokens,
   never return `password_hash`, always check roles server-side.
+- Public endpoints that also serve staff (catalogue, class detail) use `get_optional_user`
+  and hide unpublished rows from everyone else.
 - No secrets, no `.env` files, no `.venv`, `app.db` or generated files in commits.
 
 ## Definition of done
@@ -61,7 +65,8 @@ placeholders; the class catalogue and search are another teammate's work.
 
 ## Do not
 
-- Do not add class, enrolment or search tables without coordinating with their owner.
+- Do not add enrolment or search-ranking tables without coordinating with their owner; the
+  class, meeting and news tables are already ours.
 - Do not edit `app.db` by hand or squash migrations that teammates already pulled.
 - Do not redesign the visual system or rename existing CSS classes as a side effect.
 - Do not delete the placeholder routes — features replace them in place.
