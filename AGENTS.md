@@ -5,9 +5,9 @@ Guidance for AI coding assistants working in this repository. Read it before cha
 ## What this is
 
 A FastAPI + Jinja2 portal for extracurricular classes at a university. The main page, the
-navigation shell, the accounts API, the class catalogue with weekly meeting slots and campus
-news exist. Public feature pages are deliberate placeholders; the search ranking and
-enrolments are another teammate's work.
+navigation shell, the accounts API, the class catalogue with club roles (visitor/member) and
+weekly meeting slots, plus campus and club news exist. Public feature pages are deliberate
+placeholders; the search ranking and enrolments are another teammate's work.
 
 ## Commands
 
@@ -51,8 +51,10 @@ enrolments are another teammate's work.
   (`aria-hidden="true"`), colour is never the only signal.
 - Security: lowercase-normalise emails, never store raw passwords or raw session tokens,
   never return `password_hash`, always check roles server-side.
-- Public endpoints that also serve staff (catalogue, class detail) use `get_optional_user`
-  and hide unpublished rows from everyone else.
+- Public endpoints that also serve staff (catalogue, class detail, news) use
+  `get_optional_user` and hide unpublished rows and members-only content from everyone else.
+- Club roles: visitors self-join a published class; only staff promote a visitor to member.
+  One membership per person per club keeps the two roles mutually exclusive.
 - No secrets, no `.env` files, no `.venv`, `app.db` or generated files in commits.
 
 ## Definition of done

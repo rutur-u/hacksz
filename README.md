@@ -5,9 +5,10 @@ catalogue, join classes and see their own weekly schedule. Staff publish classes
 manage capacity and rosters.
 
 > **Status: accounts + catalogue backend.** The main page, the navigation shell, the
-> accounts/admin-approval API, the class catalogue with weekly meeting slots, campus news
-> and direct admin grants are done. The public pages are still placeholders and the visual
-> layer is owned by another teammate; the search ranking is the search teammate's work.
+> accounts/admin-approval API, the class catalogue with club roles (member/visitor) and
+> weekly meeting slots, campus and club news, and direct admin grants are done. The public
+> pages are still placeholders and the visual layer is owned by another teammate; the
+> search ranking is the search teammate's work.
 
 ## Stack
 
@@ -107,14 +108,21 @@ under `/api` so screens can be wired up without touching templates.
 | `auth_sessions`       | SHA-256 hash of the cookie token, expiry, revocation                   |
 | `audit_log`           | append-only trail: who registered, logged in, approved or rejected what |
 | `extra_classes`       | code (unique, upper-case), title, description, category, teacher, capacity, draft/published/archived |
-| `class_meetings`      | weekly slot per class: weekday 0-6, start/end time, room, note (unique class + weekday + start) |
-| `news_posts`          | title, body, author, publication timestamp (published immediately)     |
+| `class_memberships`   | one role per person per club: `visitor` (self-joined) or `member` (promoted by staff) |
+| `class_meetings`      | weekly slot per class: weekday 0-6, start/end time, room, note, audience `everyone`/`members` |
+| `news_posts`          | title, body, optional club, audience `public`/`members`, author, publication timestamp |
 
 Roles are `student`, `admin` and `superadmin` (the "main admin"). A student self-registers
 as `student`; becoming an `admin` happens either through an application approved by a
 `superadmin` or through a direct grant by the main admin. Suspended accounts cannot log in.
-Only the `superadmin` creates or edits classes; admins and the main admin manage the weekly
-meeting slots and post news. Visitors read only published classes and all news.
+Only the `superadmin` creates or edits classes; admins and the main admin manage weekly
+meeting slots, club memberships and news. Visitors read published classes and public news.
+
+Inside a club a person holds exactly one of two roles: `visitor` or `member`. Anyone signed
+in joins a published club as a `visitor` immediately; only staff can promote a visitor to
+`member`. A person can never hold both roles in the same club. Members-only meeting slots
+and members-only club news are hidden from visitors, outsiders and anonymous readers;
+staff still see them for moderation.
 
 ## API
 
@@ -141,8 +149,12 @@ meeting slots and post news. Visitors read only published classes and all news.
 | POST   | `/api/classes/{id}/meetings`               | admin, main admin   |
 | PATCH  | `/api/classes/{id}/meetings/{meeting_id}`  | admin, main admin   |
 | DELETE | `/api/classes/{id}/meetings/{meeting_id}`  | admin, main admin   |
-| GET    | `/api/news?q=`                             | anyone              |
-| GET    | `/api/news/{id}`                           | anyone              |
+| POST   | `/api/classes/{id}/membership`             | anyone signed in (joins as visitor) |
+| GET    | `/api/classes/{id}/memberships?role=`      | admin, main admin   |
+| PATCH  | `/api/classes/{id}/memberships/{user_id}`  | admin, main admin   |
+| DELETE | `/api/classes/{id}/memberships/{user_id}`  | admin, main admin   |
+| GET    | `/api/news?q=&class_id=`                   | anyone (members-only posts filtered by club role) |
+| GET    | `/api/news/{id}`                           | anyone with the matching club role |
 | POST   | `/api/news`                                | admin, main admin   |
 | PATCH  | `/api/news/{id}`                           | admin, main admin   |
 | DELETE | `/api/news/{id}`                           | admin, main admin   |
@@ -189,6 +201,7 @@ alembic upgrade head
 - [x] Student and admin directories for staff
 - [x] Direct admin grants by the main admin
 - [x] Class catalogue, weekly meeting slots and campus news (JSON API)
+- [x] Club roles: visitor self-join, staff-promoted members, members-only slots and news
 - [ ] Search ranking and filters over the catalogue (search teammate)
 - [ ] Personal schedule view and enrolment actions
 - [ ] Admin UI for classes, CSV export

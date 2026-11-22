@@ -55,6 +55,21 @@ class ClassStatus(StrEnum):
     ARCHIVED = "archived"
 
 
+class ClubRole(StrEnum):
+    MEMBER = "member"
+    VISITOR = "visitor"
+
+
+class MeetingAudience(StrEnum):
+    EVERYONE = "everyone"
+    MEMBERS = "members"
+
+
+class NewsAudience(StrEnum):
+    PUBLIC = "public"
+    MEMBERS = "members"
+
+
 def enum_column(enum_class: type[StrEnum], name: str) -> Enum:
     """Store enum values as short strings instead of native database enums."""
     return Enum(
@@ -214,10 +229,44 @@ class ExtraClass(Base):
         order_by="(ClassMeeting.weekday, ClassMeeting.start_time)",
         lazy="selectin",
     )
+    memberships: Mapped[list[ClassMembership]] = relationship(
+        back_populates="course", cascade="all, delete-orphan"
+    )
 
     __table_args__ = (
         Index("ix_extra_classes_status_category", "status", "category"),
         Index("ix_extra_classes_title", "title"),
+    )
+
+
+class ClassMembership(Base):
+    """One role per person per club: member, or visitor while waiting for a check.
+
+    Visitors join themselves. Only staff promote a visitor to member. The unique
+    constraint keeps a person from holding both roles in the same club.
+    """
+
+    __tablename__ = "class_memberships"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    class_id: Mapped[int] = mapped_column(
+        ForeignKey("extra_classes.id", ondelete="CASCADE"), index=True
+    )
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    role: Mapped[ClubRole] = mapped_column(
+        enum_column(ClubRole, "club_role"), default=ClubRole.VISITOR
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
+
+    course: Mapped[ExtraClass] = relationship(back_populates="memberships")
+    user: Mapped[User] = relationship(lazy="joined")
+
+    __table_args__ = (
+        UniqueConstraint("class_id", "user_id", name="uq_class_memberships_person"),
+        Index("ix_class_memberships_user_role", "user_id", "role"),
     )
 
 
@@ -235,6 +284,9 @@ class ClassMeeting(Base):
     end_time: Mapped[time] = mapped_column(Time)
     room: Mapped[str | None] = mapped_column(String(80))
     note: Mapped[str | None] = mapped_column(Text)
+    audience: Mapped[MeetingAudience] = mapped_column(
+        enum_column(MeetingAudience, "meeting_audience"), default=MeetingAudience.EVERYONE
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
 
@@ -247,16 +299,23 @@ class ClassMeeting(Base):
 
 
 class NewsPost(Base):
-    """Campus news. Published as soon as staff post it, with no draft step."""
+    """Campus or club news. Published as soon as staff post it, with no draft step."""
 
     __tablename__ = "news_posts"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(String(160))
     body: Mapped[str] = mapped_column(Text)
+    class_id: Mapped[int | None] = mapped_column(
+        ForeignKey("extra_classes.id", ondelete="CASCADE"), index=True
+    )
+    audience: Mapped[NewsAudience] = mapped_column(
+        enum_column(NewsAudience, "news_audience"), default=NewsAudience.PUBLIC
+    )
     author_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
     published_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
 
+    course: Mapped[ExtraClass | None] = relationship(foreign_keys=[class_id])
     author: Mapped[User | None] = relationship(foreign_keys=[author_id])

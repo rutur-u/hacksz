@@ -6,7 +6,15 @@ from datetime import datetime, time
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 
-from app.models import ApplicationStatus, ClassStatus, Role, UserStatus
+from app.models import (
+    ApplicationStatus,
+    ClassStatus,
+    ClubRole,
+    MeetingAudience,
+    NewsAudience,
+    Role,
+    UserStatus,
+)
 
 
 class ORMModel(BaseModel):
@@ -131,6 +139,7 @@ class MeetingCreate(BaseModel):
     end_time: time
     room: str | None = Field(default=None, max_length=80)
     note: str | None = Field(default=None, max_length=500)
+    audience: MeetingAudience = MeetingAudience.EVERYONE
 
     @model_validator(mode="after")
     def _end_after_start(self) -> MeetingCreate:
@@ -145,6 +154,7 @@ class MeetingUpdate(BaseModel):
     end_time: time | None = None
     room: str | None = Field(default=None, max_length=80)
     note: str | None = Field(default=None, max_length=500)
+    audience: MeetingAudience | None = None
 
 
 class MeetingOut(ORMModel):
@@ -155,6 +165,7 @@ class MeetingOut(ORMModel):
     end_time: time
     room: str | None
     note: str | None
+    audience: MeetingAudience
 
 
 class ClassCreate(BaseModel):
@@ -201,20 +212,51 @@ class ClassList(BaseModel):
     total: int
 
 
+class MembershipRoleUpdate(BaseModel):
+    role: ClubRole
+
+
+class MembershipOut(ORMModel):
+    id: int
+    class_id: int
+    user_id: int
+    role: ClubRole
+    created_at: datetime
+    updated_at: datetime
+    user: UserOut
+
+
+class MembershipList(BaseModel):
+    items: list[MembershipOut]
+    total: int
+
+
 class NewsCreate(BaseModel):
     title: str = Field(min_length=3, max_length=160)
     body: str = Field(min_length=10, max_length=20000)
+    class_id: int | None = Field(default=None, ge=1)
+    audience: NewsAudience = NewsAudience.PUBLIC
+
+    @model_validator(mode="after")
+    def _members_news_needs_a_club(self) -> NewsCreate:
+        if self.audience == NewsAudience.MEMBERS and self.class_id is None:
+            raise ValueError("class_id is required for members-only news")
+        return self
 
 
 class NewsUpdate(BaseModel):
     title: str | None = Field(default=None, min_length=3, max_length=160)
     body: str | None = Field(default=None, min_length=10, max_length=20000)
+    class_id: int | None = Field(default=None, ge=1)
+    audience: NewsAudience | None = None
 
 
 class NewsOut(ORMModel):
     id: int
     title: str
     body: str
+    class_id: int | None
+    audience: NewsAudience
     author_id: int | None
     published_at: datetime
     created_at: datetime

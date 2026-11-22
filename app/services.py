@@ -19,8 +19,11 @@ from app.models import (
     AuditLog,
     AuthSession,
     ClassMeeting,
+    ClassMembership,
     ClassStatus,
+    ClubRole,
     ExtraClass,
+    NewsAudience,
     NewsPost,
     Role,
     StudentProfile,
@@ -88,6 +91,22 @@ class AlreadyAdmin(ServiceError):
 
 
 class CannotGrantRole(ServiceError):
+    pass
+
+
+class ClassNotJoinable(ServiceError):
+    pass
+
+
+class MembershipExists(ServiceError):
+    pass
+
+
+class MembershipNotFound(ServiceError):
+    pass
+
+
+class InvalidNewsAudience(ServiceError):
     pass
 
 
@@ -319,6 +338,96 @@ def grant_admin(
     return user
 
 
+def join_class(db: Session, class_id: int, user: User) -> ClassMembership:
+    """A person joins a published club as a visitor; staff may promote them later."""
+    course = db.get(ExtraClass, class_id)
+    if course is None:
+        raise ClassNotFound(class_id)
+    if course.status != ClassStatus.PUBLISHED:
+        raise ClassNotJoinable(class_id)
+
+    existing = db.scalar(
+        select(ClassMembership.id).where(
+            ClassMembership.class_id == class_id,
+            ClassMembership.user_id == user.id,
+        )
+    )
+    if existing is not None:
+        raise MembershipExists()
+
+    membership = ClassMembership(class_id=class_id, user_id=user.id, role=ClubRole.VISITOR)
+    db.add(membership)
+    db.flush()
+    log_event(
+        db,
+        actor_id=user.id,
+        action="class_membership.joined",
+        entity_type="class_membership",
+        entity_id=membership.id,
+        payload={"class_id": class_id, "role": membership.role.value},
+    )
+    db.commit()
+    db.refresh(membership)
+    return membership
+
+
+def set_membership_role(
+    db: Session, class_id: int, target_user_id: int, actor: User, role: ClubRole
+) -> ClassMembership:
+    """Staff promote a visitor to member (or move a member back)."""
+    _get_class_or_raise(db, class_id)
+    membership = db.scalar(
+        select(ClassMembership).where(
+            ClassMembership.class_id == class_id,
+            ClassMembership.user_id == target_user_id,
+        )
+    )
+    if membership is None:
+        raise MembershipNotFound(target_user_id)
+
+    if membership.role != role:
+        previous = membership.role
+        membership.role = role
+        log_event(
+            db,
+            actor_id=actor.id,
+            action="class_membership.role_changed",
+            entity_type="class_membership",
+            entity_id=membership.id,
+            payload={
+                "class_id": class_id,
+                "user_id": target_user_id,
+                "from": previous.value,
+                "to": role.value,
+            },
+        )
+        db.commit()
+        db.refresh(membership)
+    return membership
+
+
+def remove_membership(db: Session, class_id: int, target_user_id: int, actor: User) -> None:
+    membership = db.scalar(
+        select(ClassMembership).where(
+            ClassMembership.class_id == class_id,
+            ClassMembership.user_id == target_user_id,
+        )
+    )
+    if membership is None:
+        raise MembershipNotFound(target_user_id)
+
+    log_event(
+        db,
+        actor_id=actor.id,
+        action="class_membership.removed",
+        entity_type="class_membership",
+        entity_id=membership.id,
+        payload={"class_id": class_id, "user_id": target_user_id},
+    )
+    db.delete(membership)
+    db.commit()
+
+
 def create_class(db: Session, actor: User, payload: schemas.ClassCreate) -> ExtraClass:
     code = payload.code.strip().upper()
     if db.scalar(select(ExtraClass.id).where(ExtraClass.code == code)) is not None:
@@ -450,6 +559,7 @@ def create_meeting(
         end_time=payload.end_time,
         room=_clean(payload.room),
         note=_clean(payload.note),
+        audience=payload.audience,
     )
     db.add(meeting)
     db.flush()
@@ -482,7 +592,7 @@ def update_meeting(
     changes = {
         field: value
         for field, value in changes.items()
-        if not (value is None and field in ("weekday", "start_time", "end_time"))
+        if not (value is None and field in ("weekday", "start_time", "end_time", "audience"))
     }
     start = changes.get("start_time", meeting.start_time)
     end = changes.get("end_time", meeting.end_time)
@@ -531,10 +641,24 @@ def delete_meeting(db: Session, class_id: int, meeting_id: int, actor: User) -> 
     db.commit()
 
 
+def _validate_news_scope(
+    db: Session, class_id: int | None, audience: NewsAudience
+) -> None:
+    """Club news must point at an existing class; members-only news needs a club."""
+    if audience == NewsAudience.MEMBERS and class_id is None:
+        raise InvalidNewsAudience()
+    if class_id is not None and db.get(ExtraClass, class_id) is None:
+        raise ClassNotFound(class_id)
+
+
 def create_news(db: Session, actor: User, payload: schemas.NewsCreate) -> NewsPost:
+    _validate_news_scope(db, payload.class_id, payload.audience)
+
     post = NewsPost(
         title=payload.title.strip(),
         body=payload.body.strip(),
+        class_id=payload.class_id,
+        audience=payload.audience,
         author_id=actor.id,
         published_at=utcnow(),
     )
@@ -563,8 +687,12 @@ def update_news(
     changes = {
         field: value
         for field, value in changes.items()
-        if not (value is None and field in ("title", "body"))
+        if not (value is None and field in ("title", "body", "audience"))
     }
+    class_id = changes.get("class_id", post.class_id)
+    audience = changes.get("audience", post.audience)
+    _validate_news_scope(db, class_id, audience)
+
     for field in ("title", "body"):
         if changes.get(field) is not None:
             changes[field] = changes[field].strip()
