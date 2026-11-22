@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+
+{% block title %}{{ page.title }} &middot; {{ site_name }}{% endblock %}
+
+{% block content %}
+<section class="stub">
+  <a class="back-link" href="/">{{ icon("arrow-left") }} Back to main page</a>
+
+  <div class="stub-card">
+    <div class="stub-head">
+      <span class="card-icon">{{ icon(page.icon) }}</span>
+      <span class="pill pill-warn">Planned</span>
+    </div>
+    <h1>{{ page.title }}</h1>
+    <p class="lead">{{ page.lead }}</p>
+
+    <h2 class="stub-subtitle">What this page will do</h2>
+    <ul class="planned-list">
+      {% for feature in page.planned %}
+      <li>{{ feature }}</li>
+      {% endfor %}
+    </ul>
+
+    <p class="stub-note">
+      This is a placeholder page in the skeleton build. Track the work in the
+      repository issues.
+    </p>
+  </div>
+</section>
+{% endblock %}

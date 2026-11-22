@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ site_name }}{% endblock %}</title>
+  <meta name="description" content="Find, join and manage extra classes at the university.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b4ce2'/%3E%3Ctext x='16' y='22' font-family='system-ui,sans-serif' font-size='15' font-weight='700' fill='white' text-anchor='middle'%3EEC%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="/">
+        <span class="brand-mark" aria-hidden="true">EC</span>
+        <span class="brand-name">Extra<span>Classes</span></span>
+      </a>
+
+      <nav class="main-nav" aria-label="Main">
+        {% for item in nav %}
+        <a href="{{ item.url }}"
+           class="nav-link{% if active == item.key %} is-active{% endif %}"
+           {% if active == item.key %}aria-current="page"{% endif %}>{{ item.label }}</a>
+        {% endfor %}
+      </nav>
+
+      <a class="btn btn-primary btn-sm header-action" href="/register">Sign up</a>
+    </div>
+  </header>
+
+  <main id="main" class="container">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p>&copy; {{ current_year }} {{ site_name }}</p>
+      <p class="muted">Student project &middot; skeleton build, features in progress</p>
+    </div>
+  </footer>
+</body>
+</html>

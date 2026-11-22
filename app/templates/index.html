@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+
+{% block title %}{{ site_name }} &middot; every extra class in one place{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div class="hero-copy">
+    <p class="eyebrow">Student life &middot; {{ current_year }}/{{ (current_year + 1) % 100 }}</p>
+    <h1>Every extra class on campus, in one place.</h1>
+    <p class="lead">
+      Browse what the university offers beyond the curriculum, join the classes you like,
+      and keep your week organised without a single spreadsheet.
+    </p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="/classes">Find a class {{ icon("arrow-right") }}</a>
+      <a class="btn btn-ghost" href="/register">Create an account</a>
+    </div>
+  </div>
+
+  <aside class="hero-card" aria-label="Example weekly timetable">
+    <div class="hero-card-head">
+      <span class="dot" aria-hidden="true"></span>
+      <span>Your week</span>
+      <span class="hero-card-meta">example</span>
+    </div>
+    <ul class="mini-timetable">
+      <li><span class="mini-day">Mon</span><span class="mini-body">Robotics lab<em>16:30 &middot; Room B204</em></span></li>
+      <li><span class="mini-day">Wed</span><span class="mini-body">Chamber choir<em>18:00 &middot; Hall 1</em></span></li>
+      <li><span class="mini-day">Fri</span><span class="mini-body">Photography walk<em>15:00 &middot; Main gate</em></span></li>
+    </ul>
+    <p class="hero-card-foot">Two seats left in Robotics lab</p>
+  </aside>
+</section>
+
+<section class="section" aria-labelledby="start-title">
+  <div class="section-head">
+    <h2 id="start-title">Get started</h2>
+    <p class="muted">Four doors into the portal &mdash; all of them still being built.</p>
+  </div>
+  <div class="card-grid">
+    {% for link in quick_links %}
+    <a class="card" href="{{ link.url }}">
+      <span class="card-icon">{{ icon(link.icon) }}</span>
+      <span class="card-eyebrow">{{ link.eyebrow }}</span>
+      <h3>{{ link.title }}</h3>
+      <p>{{ link.body }}</p>
+      <span class="card-more">Open {{ icon("arrow-right") }}</span>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="section" aria-labelledby="news-title">
+  <div class="section-head">
+    <h2 id="news-title">News &amp; updates</h2>
+    <p class="muted">What is happening with extra classes and this portal.</p>
+  </div>
+  <div class="news-list">
+    {% for item in news %}
+    <article class="news-item">
+      <div class="news-date">
+        <span class="news-day">{{ item.date.strftime("%d") }}</span>
+        <span class="news-month">{{ item.date.strftime("%b") }}</span>
+      </div>
+      <div class="news-body">
+        <span class="pill">{{ item.tag }}</span>
+        <h3>{{ item.title }}</h3>
+        <p>{{ item.body }}</p>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
