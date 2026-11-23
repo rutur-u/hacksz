@@ -1,26 +1,35 @@
 # smbuclubs
 
-A portal for tracking extracurricular classes at the university. Students browse the
-catalogue, join classes and see their own weekly schedule. Staff publish classes and
-manage capacity and rosters.
+A portal for extracurricular classes at the university. Students browse the catalogue,
+join clubs, get promoted from visitor to member and see their weekly schedule. Staff
+publish classes, manage meeting slots, memberships and news.
 
-> **Status: accounts + catalogue backend.** The main page, the navigation shell, the
-> accounts/admin-approval API, the class catalogue with club roles (member/visitor) and
-> weekly meeting slots, campus and club news, and direct admin grants are done. The public
-> pages are still placeholders and the visual layer is owned by another teammate; the
-> search ranking is the search teammate's work.
+**Live demo:** <https://campus-extra-classes.onrender.com> · API explorer:
+<https://campus-extra-classes.onrender.com/docs>
+
+> **Hackathon result.** End-to-end product: accounts and the admin-approval flow, class
+> catalogue with weekly meeting slots, visitor/member club roles, members-only news, an
+> admin panel, a RU/EN/ZH interface, ranked catalogue search, and a Docker deployment on
+> Render + Neon. 10 tables, 3 Alembic migrations, 40 passing tests. Server-side search
+> ranking and enrolment are still owned by the search teammate.
+>
+> The free Render service sleeps after 15 minutes idle — the first request afterwards can
+> take up to a minute.
 
 ## Stack
 
 | Layer    | Choice                                                       |
 | -------- | ------------------------------------------------------------ |
-| Runtime  | Python 3.11+ (3.13 recommended)                               |
-| Backend  | FastAPI + Uvicorn                                             |
-| Views    | Jinja2 server-rendered templates                              |
+| Runtime  | Python 3.13                                                  |
+| Backend  | FastAPI + Uvicorn                                            |
+| Views    | Jinja2 templates + vanilla ES modules (no bundler)            |
 | Styling  | Plain CSS with design tokens, no build step or CDN            |
-| Storage  | SQLite + SQLAlchemy 2.0, schema versioned with Alembic        |
+| i18n     | JSON dictionaries for English, Russian and Chinese            |
+| Storage  | Neon Postgres in production, SQLite locally; SQLAlchemy 2.0 + Alembic |
 | Auth     | Argon2 password hashes, opaque session token in an HttpOnly cookie |
+| Deploy   | Docker image on Render (free plan) + Neon Postgres            |
 | CI       | GitHub Actions: installs dependencies and runs `pytest`       |
+| Tests    | 40 tests: page smoke tests, API permissions and flows         |
 
 ## Quick start
 
@@ -71,18 +80,28 @@ paid plan, and both free tiers work without a credit card.
    branch `main`. When Render asks for `DATABASE_URL`, paste the Neon string there.
 3. Render builds the image, runs `alembic upgrade head` against Neon and starts uvicorn on
    `$PORT`. The `render.yaml` has no disk; the database is Neon.
-4. Create the first main admin once from the Render **Shell**:
+4. Create the first main admin. Render's free plan has no Shell, so generate an Argon2
+   hash locally and insert it in the Neon **SQL Editor**:
+   (with the project dependencies installed: `pip install -r requirements-dev.txt`)
 
-   ```bash
-   python -m app.cli create-superadmin --email you@uni.edu --name "Your Name"
+   ```powershell
+   python -c "import getpass; from app.security import hash_password; print(hash_password(getpass.getpass()))"
    ```
+
+   ```sql
+   INSERT INTO users (email, full_name, password_hash, role, status, created_at, updated_at)
+   VALUES ('you@uni.edu', 'Your Name', '<paste-the-hash>', 'superadmin', 'active', NOW(), NOW());
+   ```
+
+   Then sign in at `/docs` with `POST /api/auth/login`.
 
 Notes:
 
 - The free Render service sleeps after 15 minutes idle; the first request afterwards takes
   roughly a minute to wake it. Neon also suspends idle compute and wakes on the first query.
-- Keep exactly one Render instance. Scale later by upgrading the service, not by adding
-  instances around SQLite.
+- Keep exactly one Render instance on the free plan; scale by upgrading the service.
+- Auto-deploy from `main` is enabled in `render.yaml`; if a push does not start a build,
+  use **Manual Deploy → Deploy latest commit**.
 - `SESSION_COOKIE_SECURE=1` is already set so the session cookie is HTTPS-only.
 - Prefer SQLite on a persistent disk? Switch `plan` to `starter`, add the `disk` block back
   and point `DATABASE_URL` at `sqlite:////data/app.db`; the history has that variant.
@@ -93,8 +112,10 @@ Notes:
 
 ```
 app/
-  main.py              FastAPI app, page routes, template setup
-  content.py           hard-coded copy for the public pages
+  main.py              FastAPI app, page routes, locale middleware
+  content.py           navigation, quick links and translation keys
+  i18n.py              locale resolution and dictionary loading
+  locales/             en.json, ru.json, zh.json
   config.py            environment variables and session settings
   db.py                engine, session factory, declarative base
   models.py            users, profiles, applications, classes, meetings, news, audit log
@@ -108,30 +129,33 @@ app/
     admin_applications.py
     students.py        staff-facing student directory
     admins.py          main-admin-facing admin directory and role grants
-    classes.py         public catalogue + main-admin writes + weekly slots
+    classes.py         public catalogue + main-admin writes + weekly slots + memberships
     news.py            public news feed, staff publishing
-  templates/           base shell, main page, placeholder page
+  templates/           landing, auth, catalogue, class detail, my classes, admin, shell
   static/css/style.css design tokens and all page styles
-alembic/               migration environment and versions
-tests/                 page smoke tests + API tests
+  static/js/           one ES module per screen, no build step
+alembic/               migration environment and 3 versions
+tests/                 page smoke tests, API tests and i18n tests
 .github/workflows/ci.yml
 Dockerfile             production image (migrations + uvicorn)
-render.yaml            Render Blueprint: service, disk, env vars
+render.yaml            Render Blueprint: free service, Neon URL, secure cookies
 .dockerignore
 ```
 
 ## Pages
 
-| Route         | Template      | Purpose                                        | Status      |
-| ------------- | ------------- | ---------------------------------------------- | ----------- |
-| `/`           | `index.html`  | Main page with news and quick links             | done        |
-| `/register`   | `stub.html`   | Student sign-up, sign-in, password reset        | placeholder |
-| `/classes`    | `stub.html`   | Search and filter the class catalogue           | placeholder |
-| `/my-classes` | `stub.html`   | Personal weekly schedule and enrolment          | placeholder |
-| `/admin`      | `stub.html`   | Staff CRUD for classes, capacity and rosters    | placeholder |
+| Route           | Template           | Purpose                                         | Status  |
+| --------------- | ------------------ | ----------------------------------------------- | ------- |
+| `/`             | `index.html`       | Landing page with quick links and news feed      | done    |
+| `/register`     | `auth.html`        | Sign up, sign in, session state                  | done    |
+| `/classes`      | `classes.html`     | Catalogue with ranked search and filters         | done    |
+| `/classes/{id}` | `class_detail.html`| Class page, weekly meetings, join as visitor     | done    |
+| `/my-classes`   | `my_classes.html`  | Personal schedule                               | partial — waits for a “my memberships” endpoint |
+| `/admin`        | `admin.html`       | Staff panel: classes, slots, members, news       | done    |
 
-The HTML pages are visually owned by another teammate. Data features are exposed as JSON
-under `/api` so screens can be wired up without touching templates.
+Every page is available in English, Russian and Chinese via the header switcher
+(`?lang=ru`), and the choice is stored in a cookie. Template copy that is not yet in
+`app/locales/` stays in the language the frontend teammate wrote it in.
 
 ## Data model
 
@@ -222,13 +246,12 @@ alembic upgrade head
 
 ## Ownership
 
-- **Accounts, profiles, admin approval, class catalogue, meeting slots, news, database** —
-  this module.
-- **Visual design and page templates** — owned by the frontend teammate. Do not restyle
-  pages as a side effect of data work.
-- **Search ranking and enrolment** — owned by the search teammate. The catalogue tables and
-  keyword/category filters are ready for them; they add enrolments and replace the simple
-  `q` filter with real ranking under `app/api/`.
+- **Accounts, profiles, admin approval, class catalogue, meeting slots, memberships, news,
+  i18n, database and deployment** — this module.
+- **Visual design** — created by the frontend teammate and merged; changes to the visual
+  system should go through them.
+- **Search** — the client-side prefix-first ranking and filters are in place. The search
+  teammate still owns server-side relevance ranking and the enrolment tables.
 
 ## Roadmap
 
@@ -238,7 +261,11 @@ alembic upgrade head
 - [x] Direct admin grants by the main admin
 - [x] Class catalogue, weekly meeting slots and campus news (JSON API)
 - [x] Club roles: visitor self-join, staff-promoted members, members-only slots and news
-- [ ] Search ranking and filters over the catalogue (search teammate)
-- [ ] Personal schedule view and enrolment actions
-- [ ] Admin UI for classes, CSV export
-- [ ] Seed data and a demo account for reviews
+- [x] Frontend: landing page, auth, catalogue, class detail, admin panel, dark mode
+- [x] RU/EN/ZH interface with cookie persistence
+- [x] Ranked catalogue search with category, weekday and status filters
+- [x] Docker deployment on Render + Neon Postgres, live demo
+- [ ] Server-side relevance ranking and enrolment tables (search teammate)
+- [ ] Personal schedule view (`my memberships` endpoint + `/my-classes`)
+- [ ] CSV export of class rosters
+- [ ] Seed data for demo accounts
